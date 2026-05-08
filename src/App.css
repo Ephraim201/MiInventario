@@ -85,6 +85,12 @@ button.secondary {
   font-weight: 600;
 }
 
+.info {
+  margin-top: 10px;
+  color: #1d4ed8;
+  font-weight: 600;
+}
+
 .producto {
   margin-top: 12px;
   display: flex;
@@ -92,16 +98,36 @@ button.secondary {
   align-items: center;
 }
 
-.producto img {
+.producto img,
+.placeholder {
   width: 92px;
   height: 92px;
-  object-fit: cover;
   border-radius: 10px;
+}
+
+.producto img {
+  object-fit: cover;
+}
+
+.placeholder {
+  display: grid;
+  place-items: center;
+  background: #e5e7eb;
+  color: #374151;
+  font-size: 0.85rem;
+  text-align: center;
+  padding: 6px;
 }
 
 .producto h3 {
   margin: 0 0 6px;
   font-size: 1.05rem;
+}
+
+.fuente {
+  margin-top: 6px;
+  font-size: 0.82rem;
+  color: #475569;
 }
 
 @media (min-width: 768px) {

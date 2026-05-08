@@ -1,6 +1,6 @@
-# TODO - Web React escáner código de barras supermercado
+# TODO - Escáner de código de barras con base de datos pública (España)
 
-- [x] Instalar librería para escaneo de códigos de barras en móvil.
-- [x] Reemplazar `src/App.jsx` con escaneo EAN/UPC + catálogo demo de productos (nombre y foto).
-- [x] Ajustar `src/App.css` para textos y layout de escáner de código de barras.
+- [x] Actualizar `src/App.jsx` para consultar Open Food Facts por EAN/UPC tras escaneo.
+- [x] Mostrar datos remotos del producto (nombre, imagen, marca, categorías) y mejorar mensajes de error.
+- [x] Mantener fallback local para códigos demo cuando la API no tenga resultado.
 - [x] Ejecutar `npm run build` para validar compilación.

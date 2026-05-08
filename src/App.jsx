@@ -3,25 +3,60 @@ import { BrowserMultiFormatReader } from '@zxing/browser'
 import { BarcodeFormat, DecodeHintType, NotFoundException } from '@zxing/library'
 import './App.css'
 
-const PRODUCTOS = {
+const PRODUCTOS_FALLBACK = {
   '8480000000017': {
     nombre: 'Leche entera 1L',
-    supermercado: 'Mercadona',
+    marca: 'Hacendado',
+    categorias: 'Lácteos, Leche',
     foto:
       'https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=900&q=80',
+    fuente: 'Catálogo local (demo)',
   },
   '8410000000024': {
     nombre: 'Pan de molde integral',
-    supermercado: 'Carrefour',
+    marca: 'Carrefour',
+    categorias: 'Panadería',
     foto:
       'https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=900&q=80',
+    fuente: 'Catálogo local (demo)',
   },
   '8430000000031': {
     nombre: 'Tomate frito 350g',
-    supermercado: 'Bonpreu',
+    marca: 'Orlando',
+    categorias: 'Conservas, Salsas',
     foto:
       'https://images.unsplash.com/photo-1592841200221-7f0f8ef5f63b?auto=format&fit=crop&w=900&q=80',
+    fuente: 'Catálogo local (demo)',
   },
+}
+
+function normalizarProductoOpenFoodFacts(data) {
+  return {
+    nombre: data.product_name || data.product_name_es || 'Producto sin nombre',
+    marca: data.brands || 'Marca desconocida',
+    categorias: data.categories || 'Sin categorías',
+    foto: data.image_url || data.image_front_url || '',
+    fuente: 'Open Food Facts',
+  }
+}
+
+async function buscarProductoPorCodigo(codigo) {
+  const endpoint = `https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(
+    codigo,
+  )}.json`
+
+  const response = await fetch(endpoint)
+  if (!response.ok) {
+    throw new Error('No se pudo consultar la base de datos pública.')
+  }
+
+  const payload = await response.json()
+
+  if (payload?.status === 1 && payload?.product) {
+    return normalizarProductoOpenFoodFacts(payload.product)
+  }
+
+  return null
 }
 
 function App() {
@@ -30,20 +65,46 @@ function App() {
   const readerRef = useRef(null)
 
   const [escaneando, setEscaneando] = useState(false)
+  const [buscando, setBuscando] = useState(false)
   const [codigoDetectado, setCodigoDetectado] = useState('')
   const [producto, setProducto] = useState(null)
   const [error, setError] = useState('')
 
-  const resolverProducto = (codigo) => {
+  const resolverProducto = async (codigo) => {
     const clave = codigo.trim()
-    const encontrado = PRODUCTOS[clave] || null
     setCodigoDetectado(clave)
-    setProducto(encontrado)
+    setProducto(null)
+    setError('')
+    setBuscando(true)
 
-    if (!encontrado) {
-      setError(`No se encontró el producto para el código ${clave}.`)
-    } else {
-      setError('')
+    try {
+      const remoto = await buscarProductoPorCodigo(clave)
+      if (remoto) {
+        setProducto(remoto)
+        return
+      }
+
+      const local = PRODUCTOS_FALLBACK[clave] || null
+      if (local) {
+        setProducto(local)
+        return
+      }
+
+      setError(
+        `No se encontró información para el código ${clave}. Intenta con otro producto.`,
+      )
+    } catch {
+      const local = PRODUCTOS_FALLBACK[clave] || null
+      if (local) {
+        setProducto(local)
+        setError('No hubo conexión con Open Food Facts. Mostrando resultado local.')
+      } else {
+        setError(
+          'Error consultando Open Food Facts. Revisa tu conexión e inténtalo de nuevo.',
+        )
+      }
+    } finally {
+      setBuscando(false)
     }
   }
 
@@ -74,8 +135,9 @@ function App() {
         videoRef.current,
         (result, err) => {
           if (result) {
-            resolverProducto(result.getText())
+            const code = result.getText()
             detenerEscaneo()
+            resolverProducto(code)
             return
           }
 
@@ -120,8 +182,8 @@ function App() {
       <header className="card">
         <h1>Escáner de código de barras</h1>
         <p>
-          App demo para Barcelona, España. Escanea el código de barras de un
-          producto y verás su nombre y foto.
+          App para Barcelona, España. Escanea un EAN/UPC y consulta Open Food
+          Facts para mostrar nombre e imagen del producto.
         </p>
       </header>
 
@@ -140,6 +202,7 @@ function App() {
 
       <section className="card">
         <h2>Resultado</h2>
+
         {codigoDetectado ? (
           <p className="code">
             Código detectado: <strong>{codigoDetectado}</strong>
@@ -148,14 +211,21 @@ function App() {
           <p>Aún no se ha detectado ningún código.</p>
         )}
 
+        {buscando && <p className="info">Buscando producto en base de datos…</p>}
         {error && <p className="error">{error}</p>}
 
         {producto && (
           <article className="producto">
-            <img src={producto.foto} alt={producto.nombre} />
+            {producto.foto ? (
+              <img src={producto.foto} alt={producto.nombre} />
+            ) : (
+              <div className="placeholder">Sin imagen</div>
+            )}
             <div>
               <h3>{producto.nombre}</h3>
-              <p>Supermercado: {producto.supermercado}</p>
+              <p>Marca: {producto.marca}</p>
+              <p>Categorías: {producto.categorias}</p>
+              <p className="fuente">Fuente: {producto.fuente}</p>
             </div>
           </article>
         )}
