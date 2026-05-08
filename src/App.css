@@ -1,0 +1,120 @@
+:root {
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  color: #111827;
+  background: #f3f4f6;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #f3f4f6;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.app {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 16px;
+  display: grid;
+  gap: 14px;
+}
+
+.card {
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 14px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+}
+
+h1 {
+  margin: 0 0 8px;
+  font-size: 1.4rem;
+}
+
+h2 {
+  margin: 0 0 10px;
+  font-size: 1.1rem;
+}
+
+p {
+  margin: 0;
+  line-height: 1.4;
+}
+
+.preview {
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  background: #0f172a;
+  border-radius: 12px;
+  object-fit: cover;
+}
+
+.actions {
+  margin-top: 10px;
+  display: flex;
+  justify-content: center;
+}
+
+button {
+  border: none;
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-weight: 600;
+  background: #16a34a;
+  color: #fff;
+  cursor: pointer;
+}
+
+button.secondary {
+  background: #334155;
+}
+
+.code {
+  margin-bottom: 8px;
+}
+
+.error {
+  margin-top: 10px;
+  color: #b91c1c;
+  font-weight: 600;
+}
+
+.producto {
+  margin-top: 12px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.producto img {
+  width: 92px;
+  height: 92px;
+  object-fit: cover;
+  border-radius: 10px;
+}
+
+.producto h3 {
+  margin: 0 0 6px;
+  font-size: 1.05rem;
+}
+
+@media (min-width: 768px) {
+  .app {
+    padding: 28px;
+    gap: 16px;
+  }
+
+  h1 {
+    font-size: 1.7rem;
+  }
+
+  .card {
+    padding: 18px;
+  }
+}
