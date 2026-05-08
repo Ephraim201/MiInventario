@@ -1,23 +1,24 @@
 import { useEffect, useRef, useState } from 'react'
-import QrScanner from 'qr-scanner'
+import { BrowserMultiFormatReader } from '@zxing/browser'
+import { BarcodeFormat, DecodeHintType, NotFoundException } from '@zxing/library'
 import './App.css'
 
 const PRODUCTOS = {
-  BCN001: {
-    nombre: 'Llet semidesnatada 1L',
+  '8480000000017': {
+    nombre: 'Leche entera 1L',
     supermercado: 'Mercadona',
     foto:
       'https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=900&q=80',
   },
-  BCN002: {
-    nombre: 'Pa de pagès',
-    supermercado: 'Bonpreu',
+  '8410000000024': {
+    nombre: 'Pan de molde integral',
+    supermercado: 'Carrefour',
     foto:
       'https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=900&q=80',
   },
-  BCN003: {
-    nombre: 'Tomàquet triturat 400g',
-    supermercado: 'Condis',
+  '8430000000031': {
+    nombre: 'Tomate frito 350g',
+    supermercado: 'Bonpreu',
     foto:
       'https://images.unsplash.com/photo-1592841200221-7f0f8ef5f63b?auto=format&fit=crop&w=900&q=80',
   },
@@ -25,7 +26,8 @@ const PRODUCTOS = {
 
 function App() {
   const videoRef = useRef(null)
-  const scannerRef = useRef(null)
+  const controlsRef = useRef(null)
+  const readerRef = useRef(null)
 
   const [escaneando, setEscaneando] = useState(false)
   const [codigoDetectado, setCodigoDetectado] = useState('')
@@ -33,12 +35,13 @@ function App() {
   const [error, setError] = useState('')
 
   const resolverProducto = (codigo) => {
-    const clave = codigo.trim().toUpperCase()
+    const clave = codigo.trim()
     const encontrado = PRODUCTOS[clave] || null
-    setProducto(encontrado)
     setCodigoDetectado(clave)
+    setProducto(encontrado)
+
     if (!encontrado) {
-      setError(`No se encontró el producto para el código "${clave}".`)
+      setError(`No se encontró el producto para el código ${clave}.`)
     } else {
       setError('')
     }
@@ -46,42 +49,63 @@ function App() {
 
   const iniciarEscaneo = async () => {
     setError('')
+
     if (!videoRef.current) return
 
     try {
-      const scanner = new QrScanner(
-        videoRef.current,
-        (result) => {
-          const data = typeof result === 'string' ? result : result?.data
-          if (!data) return
-          resolverProducto(data)
-          detenerEscaneo()
-        },
+      const hints = new Map()
+      hints.set(DecodeHintType.POSSIBLE_FORMATS, [
+        BarcodeFormat.EAN_13,
+        BarcodeFormat.EAN_8,
+        BarcodeFormat.UPC_A,
+        BarcodeFormat.UPC_E,
+      ])
+
+      const reader = new BrowserMultiFormatReader(hints)
+      readerRef.current = reader
+
+      const controls = await reader.decodeFromConstraints(
         {
-          preferredCamera: 'environment',
-          returnDetailedScanResult: true,
-          highlightScanRegion: true,
-          highlightCodeOutline: true,
+          audio: false,
+          video: {
+            facingMode: { ideal: 'environment' },
+          },
+        },
+        videoRef.current,
+        (result, err) => {
+          if (result) {
+            resolverProducto(result.getText())
+            detenerEscaneo()
+            return
+          }
+
+          if (err && !(err instanceof NotFoundException)) {
+            setError('Error al leer el código de barras.')
+          }
         },
       )
 
-      scannerRef.current = scanner
-      await scanner.start()
+      controlsRef.current = controls
       setEscaneando(true)
     } catch {
       setError(
-        'No se pudo acceder a la cámara. Revisa permisos del navegador o usa HTTPS en móvil.',
+        'No se pudo acceder a la cámara. Revisa permisos del navegador y usa HTTPS en móvil.',
       )
       setEscaneando(false)
     }
   }
 
   const detenerEscaneo = () => {
-    if (scannerRef.current) {
-      scannerRef.current.stop()
-      scannerRef.current.destroy()
-      scannerRef.current = null
+    if (controlsRef.current) {
+      controlsRef.current.stop()
+      controlsRef.current = null
     }
+
+    if (readerRef.current) {
+      readerRef.current.reset()
+      readerRef.current = null
+    }
+
     setEscaneando(false)
   }
 
@@ -94,10 +118,10 @@ function App() {
   return (
     <main className="app">
       <header className="card">
-        <h1>Escáner QR de supermercado</h1>
+        <h1>Escáner de código de barras</h1>
         <p>
-          App demo para Barcelona, España. Escanea un QR y te mostrará nombre y
-          foto del producto.
+          App demo para Barcelona, España. Escanea el código de barras de un
+          producto y verás su nombre y foto.
         </p>
       </header>
 
